@@ -1,25 +1,21 @@
+module TypeRepPoly where
 
-module Dynamic where
+open import Level using (suc)
 
-import Level as L
+open import Data.Nat using ()
+open import Data.Fin using (Fin; compare; equal)
+open import Data.Vec using (Vec; []; _∷_; lookup)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import Data.Maybe using (Maybe; just; nothing)
 
-open import Function using (id)
+open import Relation.Binary.Core using (_≡_; refl)
+open import Relation.Binary.HeterogeneousEquality using (_≅_; refl)
+open import Relation.Binary.PropositionalEquality.TrustMe using (trustMe)
 
-import Data.Nat using ()
-open import Data.Fin
-open import Data.Vec
-open import Data.Product
-open import Data.Maybe
-
-open import Relation.Binary.Core hiding (_⇒_)
-open import Relation.Binary.HeterogeneousEquality
-open import Relation.Binary.PropositionalEquality.TrustMe
-
-Heterogeneous : ∀ {ℓ} → Set (L.suc ℓ)
-Heterogeneous = ∃ id
+open import TypeInfo
 
 infixl 9 _$$_
-data TypeRep {ℓ} {n} (vec : Vec Heterogeneous n) : {t : Set ℓ} → t → Set (L.suc ℓ) where
+data TypeRep {ℓ} {n} (vec : Vec Heterogeneous n) : {t : Set ℓ} → t → Set (suc ℓ) where
   stop : (i : Fin n) → TypeRep vec (proj₂ (lookup i vec))
   _$$_ : {A : Set _} {B : Set _} {f : A → B} {a : A} →
          TypeRep vec f → TypeRep vec a → TypeRep vec (f a)
@@ -44,10 +40,10 @@ typeRepEq _ _ = nothing
 
 {-------------------------- DYNAMIC --------------------------}
 
+{-
 Dynamic : ∀ {ℓ} (rep : {t : Set (L.suc ℓ)} → t → Set (L.suc (L.suc ℓ))) → Set (L.suc (L.suc ℓ))
 Dynamic rep = ∃ λ t → rep t × t
 
-{-
 record DecidableRep {ℓ} (rep : {t : Set (L.suc ℓ)} → t → Set (L.suc (L.suc ℓ))) : Set (L.suc (L.suc ℓ)) where
   constructor decidable
   field get : ∀ {t₁ t₂ : Set _} → rep t₁ → rep t₂ → Maybe (t₁ ≅ t₂)
@@ -69,17 +65,19 @@ private
   vec : Vec Heterogeneous _
   vec = (_ , StateT) ∷ (_ , Maybe) ∷ (_ , Int) ∷ (_ , String) ∷ []
 
+  module F = Data.Fin
+
   one : Fin 4
-  one = suc zero
+  one = F.suc F.zero
 
   two : Fin 4
-  two = suc (suc zero)
+  two = F.suc (F.suc F.zero)
 
   three : Fin 4
-  three = suc (suc (suc zero))
+  three = F.suc (F.suc (F.suc F.zero))
 
   test1 : TypeRep vec (StateT Int Maybe String)
-  test1 = stop zero $$ stop two $$ stop one $$ stop three
+  test1 = stop F.zero $$ stop two $$ stop one $$ stop three
 
   test2 : TypeRep vec (Maybe Int)
   test2 = stop one $$ stop two
