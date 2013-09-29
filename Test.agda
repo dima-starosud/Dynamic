@@ -8,6 +8,8 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
 
 open import Instance
+open import SetFuncRep
+open import TypeInfo
 open import TypeRepMono
 
 sfDec : ∀ {ℓ} (t₁ t₂ : Set (suc ℓ)) {{s : _}} →
