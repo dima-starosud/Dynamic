@@ -55,3 +55,15 @@ sfTest = sfDec (Set → Set → Set) (Set → Set → Set)
 sfProof : sfTest ≡ just refl
 sfProof = refl
 
+postulate
+  String : Set
+  _++_ : String → String → String
+
+record Show (t : Set) : Set where
+  field get : t → String
+
+ShowList : ∀ {a} → Instance (Show (List a))
+ShowList {a} = instance [ Show a ] λ i → record {get = helper (Show.get i)}
+  where
+    helper : (a → String) → List a → String
+    helper show = _
