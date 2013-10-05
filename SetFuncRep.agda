@@ -2,10 +2,14 @@ module SetFuncRep where
 
 open import Level using () renaming (suc to sucL)
 
+open import Data.Maybe using (Maybe; just; nothing; monadPlus)
 open import Data.Nat using (ℕ; suc)
 open import Data.List using (List; _∷_; [])
 open import Data.Product using (_×_; _,_)
 
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂; subst)
+
+open import Utils
 open import Instance
 
 infixr 9 _⇒_
@@ -39,3 +43,8 @@ completeCtor {ℓ} ctor = helper (ctor , 0)
     helper : {t : Set (sucL ℓ)} → t × ℕ → SetFunc ℓ t → Set ℓ × ℕ
     helper result set = result
     helper (ctor , n) (a ⇒ b) = helper (ctor (constructType a) , suc n) b
+
+setFuncEq : ∀ {ℓ} {t₁ t₂ : Set (sucL ℓ)} → SetFunc ℓ t₁ → SetFunc ℓ t₂ → Maybe (t₁ ≡ t₂)
+setFuncEq set set = just refl
+setFuncEq (a₁ ⇒ b₁) (a₂ ⇒ b₂) = cong₂ (λ a b → a → b) <$> setFuncEq a₁ a₂ ⊛ setFuncEq b₁ b₂
+setFuncEq _ _ = nothing

@@ -7,11 +7,10 @@ open import Reflection using (Name)
 open import Data.List using (List)
 open import Data.Product using (∃)
 
-Heterogeneous : ∀ {ℓ} → Set (suc ℓ)
-Heterogeneous = ∃ id
+open import Utils
 
 record TypeInfo {ℓ} (t : Set ℓ) : Set (suc (suc ℓ)) where
   constructor typeinfo
   field
     name : Name
-    args : List (Heterogeneous {suc ℓ})
+    args : List (Heterogeneous (suc ℓ))

@@ -1,6 +1,6 @@
 module Instance where
 
-open import Level using (Lift; lift; _⊔_) renaming (suc to sucL)
+open import Level using (Level; Lift; lift; _⊔_) renaming (suc to sucL)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Unit using (⊤; tt)
 open import Data.List using (List; _∷_; [])
@@ -9,13 +9,17 @@ data Instance {ℓ} (i : Set ℓ) : Set (sucL ℓ) where
   value : i → Instance i
   requires : (t : Set ℓ) (f : t → Instance i) → Instance i
 
-Func : ∀ {ℓ} (ts : List (Set ℓ)) (R : Set ℓ) → Set ℓ
-Func [] R = R
-Func (t ∷ ts) R = t → Func ts R
+Func : ∀ {a} (ts : List (Set a)) (b : Level) (R : Set (a ⊔ b)) → Set (a ⊔ b)
+Func [] _ R = R
+Func (t ∷ ts) b R = t → Func ts b R
 
-instance : ∀ {ℓ} (ts : List (Set ℓ)) {i : Set ℓ} (f : Func ts i) → Instance i
+instance : ∀ {ℓ} (ts : List (Set ℓ)) {i : Set ℓ} (f : Func ts ℓ i) → Instance i
 instance [] f = value f
 instance (t ∷ ts) f = requires _ λ v → instance ts (f v)
+
+instanceI : ∀ {ℓ} (ts : List (Set ℓ)) {i : Set ℓ} (f : Func ts (sucL ℓ) (Instance i)) → Instance i
+instanceI [] f = f
+instanceI (t ∷ ts) f = requires _ λ v → instanceI ts (f v)
 
 expandRequirement : ∀ {ℓ} {i t : Set ℓ} → Instance t → (t → Instance i) → Instance i
 expandRequirement (value t) f = f t

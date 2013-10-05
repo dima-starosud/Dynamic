@@ -8,6 +8,7 @@ open import Data.Nat using (ℕ; suc)
 open import Data.List using (List; _∷_; []; drop)
 open import Data.Product using (_×_; _,_)
 
+open import Utils
 open import Instance
 open import TypeInfo
 open import SetFuncRep
@@ -32,7 +33,7 @@ dropTail {a = a} n xs = helper (drop n xs) xs
 typeinfo⇒instance : ∀ {ℓ} {t : Set ℓ} {t' : Set (sucL ℓ)} {c : t'} → ℕ → TypeInfo t → Instance (BuildTypeRep {ℓ} c)
 typeinfo⇒instance {ℓ = ℓ} {c = c} n (typeinfo name args) = helper (stop name) (dropTail n args)
   where
-    helper : TypeRep → List (Heterogeneous {sucL ℓ}) → Instance (BuildTypeRep {ℓ} c)
+    helper : TypeRep → List (Heterogeneous (sucL ℓ)) → Instance (BuildTypeRep {ℓ} c)
     helper tr [] = value (buildTypeRep tr)
     helper tr ((_ , t) ∷ ts) =
       requires (BuildTypeRep t)

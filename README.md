@@ -20,15 +20,21 @@ In this way one can easily define decidable function for two types which have ty
 
 Recursive instance search doesn't work in Agda. But using type level computation we can simulate it. The main idea is to expand type of function in the way it will include all the necessary instance arguments. Also every new instance may contain additional requirements.
 Let's say we want to create Show type class which will handle complex structures.
-We have to do something like this:
+For lists we have to do something like this:
 
-    record Show (t : Set) : Set where  
-      field get : t → String  
+    record Show (t : Set) : Set where
+      constructor mkShow
+      field get : t → String
 
-    ShowList : ∀ {a} → Instance (Show (List a))  
-    ShowList {a} = instance [ Show a ] λ i → record {get = helper (Show.get i)}  
-      where  
-        helper : (a → String) → List a → String  
-        helper show = _  
+    ShowList : ∀ {a} → Instance (Show (List a))
+    ShowList {a} = instance [ Show a ] (mkShow ∘ helper ∘ Show.get)
+      where
+        helper : (a → String) → List a → String
+        helper show xs = "[" ++ shows xs ++ "]"
+          where
+            shows : List a → String
+     	    shows [] = ""
+            shows (x ∷ []) = show x
+            shows (x ∷ xs) = show x ++ ", " ++ shows xs
 
 You can see that to define an instance we have to say what it requires and how to get exact instance if all the requirements provided.

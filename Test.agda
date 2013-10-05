@@ -1,29 +1,25 @@
 module Test where
 
 open import Level using (suc)
+open import Function using (id; _$_; _∘_; _∋_)
 
+open import Data.Nat using (ℕ)
+open import Data.Nat.Show using () renaming (show to showℕ)
+open import Data.String using (String; _++_)
+open import Data.Unit using (⊤)
+open import Data.Vec using (Vec; _∷_; []; toList)
 open import Data.List using (List; _∷_; []; [_])
-open import Data.Product using (_,_)
+open import Data.Product using (_,_; ,_)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
+open import Relation.Binary.HeterogeneousEquality using (_≅_; refl)
 
+open import Utils
 open import Instance
 open import SetFuncRep
 open import TypeInfo
-open import TypeRepMono
-
-sfDec : ∀ {ℓ} (t₁ t₂ : Set (suc ℓ)) {{s : _}} →
-        BuildSetFunc {ℓ} t₁ [ s ]=>
-        BuildSetFunc {ℓ} t₂ [ s ]=> Maybe (t₁ ≡ t₂)
-sfDec {ℓ} t₁ t₂ {{s}} =
-  withI {{s}} λ sf₁ → withI {{s}} λ sf₂ → helper (BuildSetFunc.get sf₁) (BuildSetFunc.get sf₂)
-  where
-    helper : {t₁ t₂ : Set (suc ℓ)} → SetFunc ℓ t₁ → SetFunc ℓ t₂ → Maybe (t₁ ≡ t₂)
-    helper set set = just refl
-    helper (a₁ ⇒ b₁) (a₂ ⇒ b₂) with helper a₁ a₂ | helper b₁ b₂
-    ... | just refl | just refl = just refl
-    ... | _         | _         = nothing
-    helper _ _ = nothing
+open import TypeRepMono as M
+open import TypeRepPoly as P
 
 postulate
   Int : Set
@@ -34,36 +30,79 @@ ti-int : Instance (TypeInfo Int)
 ti-int = value (typeinfo (quote Int) [])
 
 ti-map : ∀ {t} → Instance (TypeInfo (Map t))
-ti-map {t} = value (typeinfo (quote Map) [ _ , t ])
+ti-map {t} = value (typeinfo (quote Map) [ , t ])
 
 ti-trs : ∀ {t a} → Instance (TypeInfo (Trans t a))
-ti-trs {t} {a} = value (typeinfo (quote Trans) ((_ , t) ∷ [ _ , a ]))
+ti-trs {t} {a} = value (typeinfo (quote Trans) ((, t) ∷ [ , a ]))
 
-qint = stop (quote Int)
-qmap = stop (quote Map)
-qtrans = stop (quote Trans)
+ti-top : Instance (TypeInfo ⊤)
+ti-top = value (typeinfo (quote ⊤) [])
 
-trTest : TypeRep
-trTest = getTypeRep (Trans (Trans (Trans Map)) (Map Int))
+qint = M.stop (quote Int)
+qmap = M.stop (quote Map)
+qtrans = M.stop (quote Trans)
+
+trTest : M.TypeRep
+trTest = M.getTypeRep (Trans (Trans (Trans Map)) (Map Int))
 
 trProff : trTest ≡ qtrans $$ (qtrans $$ (qtrans $$ qmap)) $$ (qmap $$ qint)
 trProff = refl
 
+setFuncEq2 : ∀ {ℓ} (t₁ t₂ : Set (suc ℓ)) {{s : _}} →
+             BuildSetFunc {ℓ} t₁ [ s ]=>
+             BuildSetFunc {ℓ} t₂ [ s ]=> Maybe (t₁ ≡ t₂)
+setFuncEq2 {ℓ} t₁ t₂ {{s}} =
+  withI {{s}} λ sf₁ → withI {{s}} λ sf₂ → setFuncEq (BuildSetFunc.get sf₁) (BuildSetFunc.get sf₂)
+
 sfTest : Maybe _
-sfTest = sfDec (Set → Set → Set) (Set → Set → Set)
+sfTest = setFuncEq2 (Set → Set → Set) (Set → Set → Set)
 
 sfProof : sfTest ≡ just refl
 sfProof = refl
 
-postulate
-  String : Set
-  _++_ : String → String → String
-
 record Show (t : Set) : Set where
+  constructor mkShow
   field get : t → String
 
 ShowList : ∀ {a} → Instance (Show (List a))
-ShowList {a} = instance [ Show a ] λ i → record {get = helper (Show.get i)}
+ShowList {a} = instance [ Show a ] (mkShow ∘ helper ∘ Show.get)
   where
     helper : (a → String) → List a → String
-    helper show = _
+    helper show xs = "[" ++ shows xs ++ "]"
+      where
+        shows : List a → String
+        shows [] = ""
+        shows (x ∷ []) = show x
+        shows (x ∷ xs) = show x ++ ", " ++ shows xs
+
+ShowVec : ∀ {a n} → Instance (Show (Vec a n))
+ShowVec {a} = instance [ Show (List a) ] λ i → mkShow (Show.get i ∘ toList)
+
+ShowNat : Instance (Show ℕ)
+ShowNat = value (mkShow showℕ)
+
+show : {t : Set} → t → Show t => String
+show t = withI λ s → Show.get s t
+
+showxs : String
+showxs = show (List _ ∋ 1 ∷ 2 ∷ 3 ∷ 4 ∷ [])
+
+testShowxs : showxs ≡ "[1, 2, 3, 4]"
+testShowxs = refl
+
+checkEq : ∀ {ℓ} {t₁ t₂ : Set ℓ} (v₁ : t₁) (v₂ : t₂) →
+          BuildHetRefl v₁ v₂ => v₁ ≅ v₂
+checkEq _ _ = withI BuildHetRefl.get
+
+testEq : _ ≅ _
+testEq = checkEq (Map Int) (Map Int)
+
+checkSf : ∀ {ℓ n} (vec : Vec (Heterogeneous (suc ℓ)) n) →
+          BuildCtorSf vec => Vec _ n
+checkSf _ = withI BuildCtorSf.get
+
+testSf : Vec _ 1
+testSf = checkSf ((Set , Int) ∷ [])
+
+test : P.TypeRep _ _
+test = P.getTypeRep ((, ⊤) ∷ []) ⊤
