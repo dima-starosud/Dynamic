@@ -4,6 +4,7 @@ open import Level using (suc)
 open import Function using (id; _$_; _∘_; _∋_)
 
 open import Data.Nat using (ℕ)
+open import Data.Fin using (zero)
 open import Data.Nat.Show using () renaming (show to showℕ)
 open import Data.String using (String; _++_)
 open import Data.Unit using (⊤)
@@ -42,11 +43,11 @@ qint = M.stop (quote Int)
 qmap = M.stop (quote Map)
 qtrans = M.stop (quote Trans)
 
-trTest : M.TypeRep
-trTest = M.getTypeRep (Trans (Trans (Trans Map)) (Map Int))
+monoTrTest : M.TypeRep
+monoTrTest = M.getTypeRep (Trans (Trans (Trans Map)) (Map Int))
 
-trProff : trTest ≡ qtrans $$ (qtrans $$ (qtrans $$ qmap)) $$ (qmap $$ qint)
-trProff = refl
+monoTrTestProff : monoTrTest ≡ qtrans $$ (qtrans $$ (qtrans $$ qmap)) $$ (qmap $$ qint)
+monoTrTestProff = refl
 
 setFuncEq2 : ∀ {ℓ} (t₁ t₂ : Set (suc ℓ)) {{s : _}} →
              BuildSetFunc {ℓ} t₁ [ s ]=>
@@ -54,11 +55,11 @@ setFuncEq2 : ∀ {ℓ} (t₁ t₂ : Set (suc ℓ)) {{s : _}} →
 setFuncEq2 {ℓ} t₁ t₂ {{s}} =
   withI {{s}} λ sf₁ → withI {{s}} λ sf₂ → setFuncEq (BuildSetFunc.get sf₁) (BuildSetFunc.get sf₂)
 
-sfTest : Maybe _
-sfTest = setFuncEq2 (Set → Set → Set) (Set → Set → Set)
+sfe2Test : Maybe _
+sfe2Test = setFuncEq2 (Set → Set → Set) (Set → Set → Set)
 
-sfProof : sfTest ≡ just refl
-sfProof = refl
+sfe2Proof : sfe2Test ≡ just refl
+sfe2Proof = refl
 
 record Show (t : Set) : Set where
   constructor mkShow
@@ -104,5 +105,8 @@ checkSf _ = withI BuildCtorSf.get
 testSf : Vec _ 1
 testSf = checkSf ((Set , Int) ∷ [])
 
-test : P.TypeRep _ _
-test = P.getTypeRep ((, ⊤) ∷ []) ⊤
+polyTrTest : P.TypeRep _ _
+polyTrTest = P.getTypeRep ((, ⊤) ∷ []) ⊤
+
+polyTrProof : polyTrTest ≡ stop zero
+polyTrProof = refl
