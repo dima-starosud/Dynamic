@@ -105,8 +105,14 @@ checkSf _ = withI BuildCtorSf.get
 testSf : Vec _ 1
 testSf = checkSf ((Set , Int) ∷ [])
 
-polyTrTest : P.TypeRep _ _
-polyTrTest = P.getTypeRep ((, ⊤) ∷ []) ⊤
+polyTrTest1 : P.TypeRep _ _
+polyTrTest1 = P.getTypeRep ((, ⊤) ∷ []) ⊤
 
-polyTrProof : polyTrTest ≡ stop zero
-polyTrProof = refl
+polyTrProof1 : polyTrTest1 ≡ stop zero
+polyTrProof1 = refl
+
+polyTrTest2 : P.TypeRep ((, Map Int) ∷ []) _
+polyTrTest2 = P.getTypeRep ((, Map Int) ∷ []) (Map Int)
+
+polyTrProof2 : polyTrTest2 ≡ stop zero
+polyTrProof2 = refl

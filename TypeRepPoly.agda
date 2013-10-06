@@ -54,13 +54,8 @@ private
       folder : Maybe (Lift (Fin n)) → Fin n × t → _
       folder acc (fin , t) = acc ∣ (if f t then just (lift fin) else nothing)
 
-  name-eq : Name → Name → Bool
-  name-eq n m with n ≟-Name m
-  ... | yes _ = true
-  ... | no _ = false
-
   CtorSf : ∀ ℓ → Set (suc (suc ℓ))
-  CtorSf ℓ = Name × Σ (Set (suc ℓ)) λ sf → SetFunc ℓ sf × sf
+  CtorSf ℓ = M.TypeRep × Σ (Set (suc ℓ)) λ sf → SetFunc ℓ sf × sf
 
   CtorSfTr : ∀ {ℓ n} → Vec (Heterogeneous (suc ℓ)) n → Set (suc (suc ℓ))
   CtorSfTr {ℓ} vec = Σ (Set (suc ℓ)) λ t → SetFunc ℓ t × Σ t λ ctor → TypeRep {suc ℓ} vec {t} ctor
@@ -90,18 +85,20 @@ private
       ≡-proof (sucN n) (sucF i) (x ∷ xs) = ≡-proof n i xs
 
   TypeRepDataHelper : ∀ {ℓ n} (vec : Vec (CtorSf ℓ) n) → M.TypeRep → Maybe (CtorSfTr (toHVec vec))
-  TypeRepDataHelper {ℓ} {n} vec (M.stop name) = helper <$> findIndex (name-eq name) (map proj₁ vec)
+  TypeRepDataHelper {ℓ} {n} vec rep = tryStop rep ∣ tryApp rep
     where
-      helper : Lift {_} {suc (suc ℓ)} (Fin n) → CtorSfTr (toHVec vec)
-      helper (lift i) = _ , sf , ctor , stop-TypeRep i vec
+      tryStop : M.TypeRep → _
+      tryStop rep = helper <$> findIndex (M._==_ rep) (map proj₁ vec)
         where
-          ctorsf = lookup i vec
-          sf = proj₁ (proj₂ (proj₂ ctorsf))
-          ctor = proj₂ (proj₂ (proj₂ ctorsf))
-  TypeRepDataHelper vec (f M.$$ a) =
-    TypeRepDataHelper vec f >>= λ f →
-    TypeRepDataHelper vec a >>= λ a →
-    TryApplySfTr f a
+          helper : Lift {_} {suc (suc ℓ)} (Fin n) → CtorSfTr (toHVec vec)
+          helper (lift i) = let _ , _ , sf , ctor = lookup i vec
+                            in _ , sf , ctor , stop-TypeRep i vec
+      tryApp : M.TypeRep → _
+      tryApp (M.stop _) = nothing
+      tryApp (f M.$$ a) =
+        TypeRepDataHelper vec f >>= λ f →
+        TypeRepDataHelper vec a >>= λ a →
+        TryApplySfTr f a
 
   HeteroTypeRep : ∀ ℓ → Set (suc (suc ℓ))
   HeteroTypeRep ℓ = ∃ λ n → Σ (Vec _ n) λ vec → Σ (Set (suc ℓ)) λ t → Σ t λ ctor → TypeRep {suc ℓ} vec {t} ctor
@@ -122,12 +119,9 @@ BuildCtorSf-nil {ℓ} = value (buildCtorSf [])
 BuildCtorSf-cons : ∀ {ℓ n} {x : Heterogeneous (suc ℓ)} {xs : Vec (Heterogeneous (suc ℓ)) n} →
                    Instance (BuildCtorSf (x ∷ xs))
 BuildCtorSf-cons {x = (t , x)} {xs = xs} =
-  instanceI (BuildSetFunc t ∷ [ BuildCtorSf xs ])
-  λ {(buildSetFunc sf) (buildCtorSf xs) →
-     let ctor , _ = completeCtor x sf
-     in instance [ TypeInfo ctor ]
-        λ {(typeinfo name _) → buildCtorSf ((name , t , sf , x) ∷ xs)}
-    }
+  instance (BuildSetFunc t ∷ M.BuildTypeRep x ∷ [ BuildCtorSf xs ])
+  λ {(buildSetFunc sf) (M.buildTypeRep tr) (buildCtorSf xs) →
+     buildCtorSf ((tr , t , sf , x) ∷ xs)}
 
 record BuildTypeRep {ℓ n} (vec : Vec (Heterogeneous (suc ℓ)) n) {t : Set (suc ℓ)} (ctor : t) : Set (suc (suc ℓ)) where
   constructor buildTypeRep

@@ -2,11 +2,14 @@ module TypeRepMono where
 
 open import Level using () renaming (suc to sucL)
 open import Function using (id)
-open import Reflection using (Name)
+open import Reflection using (Name; _≟-Name_)
 
+open import Data.Bool using (Bool; true; false; _∧_)
 open import Data.Nat using (ℕ; suc)
 open import Data.List using (List; _∷_; []; drop)
 open import Data.Product using (_×_; _,_)
+
+open import Relation.Nullary using (yes; no)
 
 open import Utils
 open import Instance
@@ -49,3 +52,14 @@ BuildTypeRep-instance {t = t} {c = c} =
 
 getTypeRep : ∀ {ℓ} {t : Set (sucL ℓ)} (c : t) → BuildTypeRep c => TypeRep
 getTypeRep _ = withI BuildTypeRep.get
+
+private
+  name-eq : Name → Name → Bool
+  name-eq n m with n ≟-Name m
+  ... | yes _ = true
+  ... | no _ = false
+
+_==_ : TypeRep → TypeRep → Bool
+stop n₁ == stop n₂ = name-eq n₁ n₂
+(f₁ $$ a₁) == (f₂ $$ a₂) = f₁ == f₂ ∧ a₁ == a₂
+_ == _ = false
