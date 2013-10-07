@@ -4,12 +4,12 @@ module Dynamic where
 open import Level using (suc)
 
 open import Data.Nat using () renaming (suc to sucN)
-open import Data.Vec using (Vec; _∷_; [])
-open import Data.Product using (_,_; ,_)
 open import Relation.Binary.HeterogeneousEquality using (refl)
 
-open        Data.Vec public using ([])
+open import Data.Vec public using (Vec; _∷_; [])
+open import Data.List public using (List; _∷_; [])
 open import Data.Maybe public using (Maybe; just; nothing; monadPlus)
+open import Data.Product public using (_,_; ,_)
 
 open import Utils public
 open import Instance public
@@ -34,8 +34,8 @@ castTr<_> : ∀ {ℓ} {n} {vec : Vec (Heterogeneous (suc ℓ)) n}
                  {typ : Set ℓ} (rep' : TypeRep vec typ) (dyn : Dynamic vec) →
                  Maybe typ
 castTr< rep' > (dynamic _ val rep) with typeRepEq rep rep'
-... | nothing = nothing
 ... | just refl = just val
+... | nothing = nothing
 
 cast<_> : ∀ {ℓ} {n} {vec : Vec (Heterogeneous (suc ℓ)) n}
           (typ : Set ℓ) (dyn : Dynamic vec) →
