@@ -7,7 +7,7 @@ open import Data.Nat using (ℕ)
 open import Data.Nat.Show using () renaming (show to showℕ)
 open import Data.String using (String)
 open import Data.Maybe using (maybe′)
-open import Data.List using (sum; downFrom)
+open import Data.List using (sum; downFrom; [_])
 open import Data.Product using (_,_; ,_)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
@@ -23,7 +23,7 @@ ti-string : Instance (TypeInfo String)
 ti-string = value (typeinfo (quote String) [])
 
 ti-list : {a : Set} → Instance (TypeInfo (List a))
-ti-list {a} = value (typeinfo (quote List) ((, a) ∷ []))
+ti-list {a} = value (typeinfo (quote List) [ _ , a ])
 
 go : Dynamic TYPES → String
 go dyn = maybe′ id fallback
