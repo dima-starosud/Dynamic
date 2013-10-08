@@ -25,16 +25,18 @@ expandRequirement : ∀ {ℓ} {i t : Set ℓ} → Instance t → (t → Instance
 expandRequirement (value t) f = f t
 expandRequirement (requires _ f') f = requires _ λ v' → expandRequirement (f' v') f
 
+record Terminated {ℓ} : Set ℓ where
+
 ResInstanceType : ∀ {a b} (n : ℕ) {i : Set a}
                   (I : Instance i) (R : i → Set b) → Set (sucL a ⊔ b)
 ResInstanceType {a} {b} _ (value i) R = {dirty-hack : Lift {_} {sucL a ⊔ b} ⊤} → R i
-ResInstanceType {a} {b} zero (requires _ _) _ = Lift {_} {sucL a ⊔ b} ⊤
+ResInstanceType {a} {b} zero (requires _ _) _ = Terminated
 ResInstanceType (suc n) (requires t f) R = {{v : Instance t}} → ResInstanceType n (expandRequirement v f) R
 
 resolveInstance : ∀ {a b} (depth : ℕ) {i : Set a}
                   (I : Instance i) {R : i → Set b} (r : (x : i) → R x) → ResInstanceType depth I R
 resolveInstance _ (value i) r = λ {_} → r i
-resolveInstance zero (requires _ _) _ = lift _
+resolveInstance zero (requires _ _) _ = _
 resolveInstance (suc n) (requires _ f) r = λ {{v}} → resolveInstance n (expandRequirement v f) r
 
 data Stop : Set where
@@ -69,4 +71,4 @@ withI : {{s : Stop}} → ∀ {a b} {{depth : SearchDepth}} {i : Set a} {R : i �
 withI {{resume}} {{searchdepth n}} r = λ {{I}} → resolveInstance n I r
 
 DefaultSearchDepth : SearchDepth
-DefaultSearchDepth = searchdepth 25
+DefaultSearchDepth = searchdepth 999
