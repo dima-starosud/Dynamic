@@ -3,7 +3,7 @@
 Here is successful attempt to implement reasonable type representation.
 Meanwhile new approach to mimic Haskell's type classes and do even more was developed.
 
-Please see examples of usage in Test.agda.
+Please see examples of usage in Test.agda and Example.agda.
 
 ### Decidable TypeRep
 
